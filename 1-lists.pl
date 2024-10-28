@@ -10,3 +10,19 @@ penultimate(X, [_ | Rest]) :- penultimate(X, Rest).
 element_at(X, [X | _], 1).
 element_at(X, [_ | Rest], K) :- Ka is K - 1, element_at(X, Rest, Ka).
 
+/* Problem 4: Find the number of elements in a list */
+list_len(X, []) :- X is 0.
+list_len(X, [_ | Rest]) :- list_len(Y, Rest), X is Y + 1.
+
+/* Problem 5: Reverse a list */
+list_rev(X, []) :- X = [].
+list_rev(X, [A | Rest]) :- list_rev(Y, Rest), append(Y, [A], X).
+
+/* Problem 6: Find out whether a list is a palindrome */
+is_palindrome(X) :- list_rev(Y, X), X == Y.
+
+/* Problem 7: Flatten a nested list structure */
+my_flatten([], X) :- X = [].
+my_flatten([A | Rest], X) :- is_list(A), !, my_flatten(A, Ap), my_flatten(Rest, Y), append(Ap, Y, X).
+my_flatten([A | Rest], X) :- my_flatten(Rest, Y), append([A], Y, X).
+
