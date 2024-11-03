@@ -26,3 +26,9 @@ my_flatten([], X) :- X = [].
 my_flatten([A | Rest], X) :- is_list(A), !, my_flatten(A, Ap), my_flatten(Rest, Y), append(Ap, Y, X).
 my_flatten([A | Rest], X) :- my_flatten(Rest, Y), append([A], Y, X).
 
+/* Problem 8: Eliminate consecutive duplicates of list elements */
+compress([], X) :- X = [].
+compress([A], X) :- X = [A].
+compress([A | Rest], X) :- compress(Rest, Y), [F | _] = Y, A \= F, append([A], Y, X).
+compress([_ | Rest], X) :- compress(Rest, X).
+
