@@ -32,3 +32,33 @@ compress([A], [A]).
 compress([A | Rest], X) :- compress(Rest, Y), [F | _] = Y, A \= F, append([A], Y, X).
 compress([_ | Rest], X) :- compress(Rest, X).
 
+/* Problem 9: Pack consecutive duplicates of list elements into sublists */
+pack([], []).
+pack([A], [[A]]).
+pack([A | Rest], X) :- pack(Rest, Y), [[F | _] | _] = Y, A \= F, append([[A]], Y, X).
+pack([A | Rest], X) :- pack(Rest, Y), [G | RR] = Y, append([A], G, NF), append([NF], RR, X).
+
+/* Problem 10: Run-length encoding of a list */
+encode([], []).
+encode([A], [[1, A]]).
+encode([A | Rest], X) :- encode(Rest, Y), [[N, A] | RR] = Y, M is N + 1, append([[M, A]], RR, X).
+encode([A | Rest], X) :- encode(Rest, Y), append([[1, A]], Y, X).
+
+/* Problem 11: Modified run-length encoding */
+encode_modified([], []).
+encode_modified([A], [A]).
+
+encode_modified([A | Rest], X) :- encode_modified(Rest, Y), [[N, A] | RR] = Y, M is N + 1, append([[M, A]], RR, X).
+encode_modified([A | Rest], X) :- encode_modified(Rest, Y), [[_, B] | _ ] = Y, B \= A,     append([A], Y, X).
+
+encode_modified([A | Rest], X) :- encode_modified(Rest, Y), [A | RR] = Y,         append([[2, A]], RR, X).
+encode_modified([A | Rest], X) :- encode_modified(Rest, Y), [B | _ ] = Y, B \= A, append([A], Y, X).
+
+/* Problem 12: Decode a run-length encoded list. (As encoded by encode_modified) */
+decode([], []).
+
+decode([[1, A] | Rest], X) :- decode(Rest, Y), append([A], Y, X).
+decode([[N, A] | Rest], X) :- M is N - 1, decode([[M, A] | Rest], Y), append([A], Y, X).
+
+decode([A | Rest], X) :- decode(Rest, Y), append([A], Y, X).
+
