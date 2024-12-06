@@ -62,3 +62,28 @@ decode([[N, A] | Rest], X) :- M is N - 1, decode([[M, A] | Rest], Y), append([A]
 
 decode([A | Rest], X) :- decode(Rest, Y), append([A], Y, X).
 
+/* Problem 13: Run-length encoding of a list (direct solution) */
+/* Already did this in 11 i think... */
+
+/* Problem 14: Duplicate the elements of a list */
+dupli([], []).
+dupli([A | Rest], X) :- dupli(Rest, Y), append([A, A], Y, X).
+
+/* Problem 15: Duplicate the elements of a list a given number of times */
+repeating(0, _, []).
+repeating(N, A, X) :- M is N - 1, repeating(M, A, Y), append([A], Y, X).
+
+dupli([], _, []).
+dupli([A | Rest], N, X) :- dupli(Rest, N, Y), repeating(N, A, Z), append(Z, Y, X).
+
+/* Problem 16: Drop every N'th element from a list */
+drop_inner([], _, _, []).
+drop_inner([_ | Rest], 0, N, X) :- drop_inner(Rest, N, N, X).
+drop_inner([A | Rest], I, N, X) :- J is I - 1, drop_inner(Rest, J, N, Y), append([A], Y, X).
+
+drop(List, N, X) :- drop_inner(List, N, N, X).
+
+/* Problem 17: Split a list into two parts; the length of the first part is given */
+split(List, I, [], List) :- I < 1.
+split([A | Rest], I, [A | Y], Z) :- J is I - 1, split(Rest, J, Y, Z).
+
