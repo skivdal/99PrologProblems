@@ -85,5 +85,34 @@ drop(List, N, X) :- drop_inner(List, N, N, X).
 
 /* Problem 17: Split a list into two parts; the length of the first part is given */
 split(List, I, [], List) :- I < 1.
-split([A | Rest], I, [A | Y], Z) :- J is I - 1, split(Rest, J, Y, Z).
+split([A | Rest], I, [A | Y], Z) :- split(Rest, I - 1, Y, Z).
+
+/* Problem 18: Extract a slice from a list (both limits included) */
+slice(_, I, J, []) :- I < 1; J < 1; I > J.
+slice(List, I, J, Y) :- split(List, I - 1, _, Z), split(Z, J - I + 1, Y, _).
+
+/* Problem 19: Rotate a list N places to the left */
+rotate(List, N, X) :- length(List, M), N > -1,   split(List, N mod M, Y, Z), append(Z, Y, X).
+rotate(List, N, X) :- length(List, M), I is M+N, split(List, I mod M, Y, Z), append(Z, Y, X).
+
+/* Problem 20: Remove the K'th element from a list */
+remove_at(X, List, K, R) :- split(List, K - 1, Beg, Y), split(Y, 1, [X], End), append(Beg, End, R).
+
+/* Problem 21: Insert an element at a given position into a list */
+insert_at(C, List, N, X) :- split(List, N - 1, Y, Z), append(Y, [C | Z], X).
+
+/* Problem 22: Create a list containing all integers within a given range */
+range(I, I, [I]).
+range(I, J, X) :- N is I + 1, range(N, J, Y), append([I], Y, X).
+
+/* Problem 23: Extract a given number of randomly selected elements from a list */
+rnd_select(_, 0, []).
+rnd_select(List, N, [C | Y]) :- length(List, Le), Len is Le + 1, random(1, Len, I), remove_at(C, List, I, R),
+                                M is N - 1, rnd_select(R, M, Y).
+
+/* Problem 24: Lotto: Draw N different random numbers from the set 1..M */
+lotto(N, M, L) :- range(1, M, X), rnd_select(X, N, L).
+
+/* Problem 25: Generate a random permutation of the elements of a list */
+rnd_permu(X, L) :- length(X, N), rnd_select(X, N, L).
 
