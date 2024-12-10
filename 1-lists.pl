@@ -84,8 +84,8 @@ drop_inner([A | Rest], I, N, X) :- J is I - 1, drop_inner(Rest, J, N, Y), append
 drop(List, N, X) :- drop_inner(List, N, N, X).
 
 /* Problem 17: Split a list into two parts; the length of the first part is given */
-split(List, I, [], List) :- I < 1.
-split([A | Rest], I, [A | Y], Z) :- split(Rest, I - 1, Y, Z).
+split(List, I, [], List) :- I < 1, !.
+split([A | Rest], I, [A | Y], Z) :- J is I - 1, split(Rest, J, Y, Z).
 
 /* Problem 18: Extract a slice from a list (both limits included) */
 slice(_, I, J, []) :- I < 1; J < 1; I > J.
@@ -102,11 +102,11 @@ remove_at(X, List, K, R) :- split(List, K - 1, Beg, Y), split(Y, 1, [X], End), a
 insert_at(C, List, N, X) :- split(List, N - 1, Y, Z), append(Y, [C | Z], X).
 
 /* Problem 22: Create a list containing all integers within a given range */
-range(I, I, [I]).
+range(I, I, [I]) :- !.
 range(I, J, X) :- N is I + 1, range(N, J, Y), append([I], Y, X).
 
 /* Problem 23: Extract a given number of randomly selected elements from a list */
-rnd_select(_, 0, []).
+rnd_select(_, 0, []) :- !.
 rnd_select(List, N, [C | Y]) :- length(List, Le), Len is Le + 1, random(1, Len, I), remove_at(C, List, I, R),
                                 M is N - 1, rnd_select(R, M, Y).
 
@@ -115,4 +115,73 @@ lotto(N, M, L) :- range(1, M, X), rnd_select(X, N, L).
 
 /* Problem 25: Generate a random permutation of the elements of a list */
 rnd_permu(X, L) :- length(X, N), rnd_select(X, N, L).
+
+/* Problem 26: Generate the combinations of K distinct objects chosen from the N elements of a list */
+combination(0, _, []) :- !.
+combination(N, X, L) :- length(X, Kp), K is Kp + 1, range(1, K, R), select(I, R, _),
+                        split(X, I, As, Y), my_last(A, As), M is N - 1,
+                        combination(M, Y, Ls), append([A], Ls, L).
+
+/* Problem 27a: Group the elements of a set into 3 disjoint subsets of cardinality 2, 3, and 4. */
+group3(X, G1, G2, G3) :- combination(2, X, G1), subtract(X, G1, Y), combination(3, Y, G2), subtract(Y, G2, Z), combination(4, Z, G3).
+
+/* Problem 27b: Group the elements of a set into disjoint subsets (general case) */
+group(_, [], []) :- !.
+group(X, [N | Rest], [G | Gsp]) :- combination(N, X, G), subtract(X, G, Y), group(Y, Rest, Gsp).
+
+/* Problem 28a: Sorting a list according to length of sublists (short lists first) */
+
+/* Helper function: partition list into L(eft) and R(ight) of A, according to the result of P(redicate).
+ * Input predicate must be on form P(A, B, N) where N=0 indicates B left and N=1 indicates B right of A.
+ */
+partition([], _, _, [], []) :- !.
+partition([B | Rest], A, P, [B | L], R) :- call_local(P, (A, B, 0)), partition(Rest, A, P, L, R). % cursed evil hack hack hack (TODO: improve)
+partition([B | Rest], A, P, L, [B | R]) :- call_local(P, (A, B, 1)), partition(Rest, A, P, L, R).
+partition([B | Rest], A, P, [B | L], R) :- call(P, A, B, 0), partition(Rest, A, P, L, R).
+partition([B | Rest], A, P, L, [B | R]) :- call(P, A, B, 1), partition(Rest, A, P, L, R).
+
+quick_sort([], _, []) :- !.
+quick_sort([A], _, [A]) :- !.
+quick_sort(X, P, Y) :- length(X, Xl), Xle is Xl + 1, random(1, Xle, I), !,
+                       remove_at(A, X, I, Z), partition(Z, A, P, L, R),
+                       quick_sort(L, P, Ls), quick_sort(R, P, Rs), append(Ls, [A | Rs], Y).
+
+length_order_asc(A, B, 0) :- length(A, La), length(B, Lb), La > Lb.
+length_order_asc(A, B, 1) :- length(A, La), length(B, Lb), La =< Lb.
+
+lsort(InList, L) :- quick_sort(InList, length_order_asc, L).
+
+/* Problem 28b: Sorting a list according to length frequency of sublists (rarest first) */
+first_el_asc([A | _], [B | _], 0) :- A > B.
+first_el_asc([A | _], [B | _], 1) :- A =< B.
+
+% Could of course be done faster with a HashMap etc.
+calculate_frequency(X, F) :- quick_sort(X, length_order_asc, Y), maplist(length, Y, Z),
+                             encode(Z, Fs), quick_sort(Fs, first_el_asc, F), !.
+
+lookup_freq([], _, _) :- fail.
+lookup_freq([[F, X] | _], X, F) :- !.
+lookup_freq([_ | Rest], X, F) :- lookup_freq(Rest, X, F).
+
+% credit: https://gist.github.com/jarble/8f8f80fa60b089d551efb0c6a74be45b
+% prolog metaprogramming sure is cool
+call_local(Definition, Params) :-
+  copy_term(Definition, (Params :- Body)),
+  call(Body).
+
+len_frequency_order_asc(Freqs, P) :-
+  P = (
+    (A, B, N) :-
+      length(A, La), length(B, Lb),
+      lookup_freq(Freqs, La, Fa),
+      lookup_freq(Freqs, Lb, Fb),
+      !,
+      (
+        Fa > Fb -> N = 0;
+        Fa =< Fb -> N = 1
+      )
+  ).
+
+lfsort(InList, L) :- calculate_frequency(InList, F), len_frequency_order_asc(F, P),
+                     quick_sort(InList, P, L), !.
 
